@@ -1,0 +1,29 @@
+@use "../../../helpers/mixins" as m;
+@use "../../../helpers/variables" as v;
+
+@mixin map() {
+  width: 100%;
+  height: 60vh;
+  padding: 0 v.$padding-horizontal-main v.$padding-vertical-main;
+  position: relative;
+
+  #listing-map {
+    width: 100%;
+    height: 100%;
+
+    .ol-viewport {
+      width: 100%;
+      height: 100%;
+      border-radius: 2.4vw;
+
+      .ol-zoom {
+        top: 22px;
+        left: 10px;
+      }
+
+      .ol-attribution {
+        padding-right: 8px;
+      }
+    }
+  }
+}
