@@ -1,8 +1,8 @@
-import loadComponent from "/src/helpers/loadComponent.js";
-import { smoothScroll } from "/src/helpers/smoothScroll.js";
-import { navbar } from "/src/components/navbar/navbar.js";
-import { url } from "/src/helpers/urlConfig.js";
-import { displayMap } from "/src/pages/listing/map/map.js";
+import loadComponent from "../../helpers/loadComponent.js";
+import { smoothScroll } from "../../helpers/smoothScroll.js";
+import { navbar } from "../../components/navbar/navbar.js";
+import { url } from "../../helpers/urlConfig.js";
+import { displayMap } from "./map/map.js";
 
 export async function main() {
   const promises = [

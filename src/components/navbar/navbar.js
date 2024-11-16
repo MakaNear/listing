@@ -1,18 +1,13 @@
 export async function navbar() {
   const list = document.querySelectorAll(".navbar .nav .nav-main .links a");
 
-  function setActiveLinkByUrl(links) {
-    const currentPath = window.location.pathname;
-    links.forEach((link) => {
-      if (link.getAttribute("href") === currentPath) {
-        link.classList.add("active");
-      } else {
-        link.classList.remove("active");
-      }
-    });
-  }
+  const getUrl = list.forEach((link) => {
+    link.getAttribute("href") === "/listing";
+  });
 
-  setActiveLinkByUrl(list);
+  if (window.location.pathname === "https://makanear.github.io/listing/") {
+    getUrl.classList.add("active");
+  }
 
   // ----- Display Logout Button ----- //
   const loginCookie = window.Cookies.get("login"); // Access Cookies from window object
