@@ -36,7 +36,6 @@ async function runAfterContent() {
   let urljs = getURLContentJS();
   let module = await import(urljs);
   module.main();
-  console.log("urljs : " + urljs);
 }
 
 export async function loadScript(src) {
