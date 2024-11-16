@@ -24,6 +24,4 @@ export async function displayMap() {
     layers: [basemap],
     view: defaultstartmap,
   });
-
-  console.log(map);
 }

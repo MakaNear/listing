@@ -3,6 +3,7 @@ import { smoothScroll } from "../../helpers/smoothScroll.js";
 import { navbar } from "../../components/navbar/navbar.js";
 import { url } from "../../helpers/urlConfig.js";
 import { displayMap } from "./map/map.js";
+import { toogleLayout, overviewLayout } from "./overview/overview.js";
 
 export async function main() {
   const promises = [
@@ -12,6 +13,10 @@ export async function main() {
       url.pages.listing + "filter/filter.html"
     ),
     loadComponent(".listing .listing-map", url.pages.listing + "map/map.html"),
+    loadComponent(
+      ".listing .listing-overview",
+      url.pages.listing + "overview/overview.html"
+    ),
     loadComponent("footer.footer", url.components.footer + "footer.html"),
   ];
 
@@ -20,6 +25,8 @@ export async function main() {
       smoothScroll();
       navbar();
       displayMap();
+      toogleLayout();
+      overviewLayout();
     })
     .catch((error) => {
       console.error("Error loading components:", error);
