@@ -1,9 +1,23 @@
 @use "../../helpers/mixins" as m;
 @use "../../helpers/variables" as v;
+@use "./filter/filter" as filter;
 @use "./map/map" as map;
 
 .listing {
+  &-filter {
+    padding: (v.$padding-vertical-main - 1vw) v.$padding-horizontal-main
+      v.$padding-vertical-main;
+    position: relative;
+
+    @include filter.filter();
+  }
+
   &-map {
+    width: 100%;
+    height: 60vh;
+    padding: 0 v.$padding-horizontal-main v.$padding-vertical-main;
+    position: relative;
+
     @include map.map();
   }
 }

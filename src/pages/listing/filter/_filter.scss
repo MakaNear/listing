@@ -1,0 +1,71 @@
+@use "../../../helpers/mixins" as m;
+@use "../../../helpers/variables" as v;
+
+@mixin filter-options($area) {
+  grid-area: $area;
+  display: grid;
+  gap: 1.2vh;
+
+  .title {
+    font-weight: 600;
+    line-height: 100%;
+  }
+
+  .options {
+    background-color: #eef1f3;
+    border-radius: 0.9vw;
+    padding: 1vw;
+    @include m.flex($justify: space-between);
+    cursor: pointer;
+    gap: 0.6vw;
+
+    &-list {
+      width: 100%;
+    }
+  }
+}
+
+@mixin filter() {
+  .filter-title {
+    font-size: 2.6vw;
+    font-weight: 700;
+    line-height: 100%;
+    padding-bottom: 1.6vh;
+  }
+
+  .filter-desc {
+    line-height: 100%;
+    padding-bottom: 4.3vh;
+    color: rgba(
+      $color: map-get($map: v.$color, $key: "dark-gray"),
+      $alpha: 0.8
+    );
+  }
+
+  .filter-content {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    grid-template-rows: repeat(1, 1fr);
+    grid-template-areas:
+      "categories distance price"
+      "location location location";
+    gap: 1.2vw 1.6vw;
+
+    &-categories {
+      @include filter-options($area: categories);
+    }
+
+    &-distance {
+      @include filter-options($area: distance);
+    }
+
+    &-price {
+      @include filter-options($area: price);
+    }
+
+    &-location {
+      @include filter-options($area: location);
+    }
+  }
+}

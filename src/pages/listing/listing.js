@@ -7,6 +7,10 @@ import { displayMap } from "./map/map.js";
 export async function main() {
   const promises = [
     loadComponent("header.navbar", url.components.navbar + "navbar.html"),
+    loadComponent(
+      ".listing .listing-filter",
+      url.pages.listing + "filter/filter.html"
+    ),
     loadComponent(".listing .listing-map", url.pages.listing + "map/map.html"),
     loadComponent("footer.footer", url.components.footer + "footer.html"),
   ];
