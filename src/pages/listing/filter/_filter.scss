@@ -1,8 +1,7 @@
 @use "../../../helpers/mixins" as m;
 @use "../../../helpers/variables" as v;
 
-@mixin filter-options($area) {
-  grid-area: $area;
+@mixin filter-options() {
   display: grid;
   gap: 1.2vh;
 
@@ -26,46 +25,26 @@
 }
 
 @mixin filter() {
-  .filter-title {
-    font-size: 2.7vw;
-    font-weight: 700;
-    line-height: 100%;
-    padding-bottom: 1.6vh;
-  }
-
-  .filter-desc {
-    line-height: 100%;
-    padding-bottom: 4.3vh;
-    color: rgba(
-      $color: map-get($map: v.$color, $key: "dark-gray"),
-      $alpha: 0.6
-    );
-  }
-
   .filter-content {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, auto);
-    grid-template-rows: repeat(1, 1fr);
-    grid-template-areas:
-      "categories distance price"
-      "location location location";
+    grid-template-columns: 1fr;
     gap: 1.2vw 1.6vw;
 
     &-categories {
-      @include filter-options($area: categories);
+      @include filter-options();
     }
 
     &-distance {
-      @include filter-options($area: distance);
+      @include filter-options();
     }
 
     &-price {
-      @include filter-options($area: price);
+      @include filter-options();
     }
 
     &-location {
-      @include filter-options($area: location);
+      @include filter-options();
     }
   }
 }

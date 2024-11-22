@@ -1,0 +1,134 @@
+@use "../../../helpers/mixins" as m;
+@use "../../../helpers/variables" as v;
+
+@mixin layout-style(
+  $layout-type,
+  $grid-template-columns,
+  $item-gap,
+  $image-max-height,
+  $info-gap,
+  $p-image: 0,
+  $pt-name: 0
+) {
+  width: 100%;
+  height: auto;
+  display: grid;
+  grid-template-columns: $grid-template-columns;
+  gap: $item-gap;
+  position: relative;
+
+  .item {
+    width: 100%;
+    height: 100%;
+    border-radius: 1.2vw;
+    background-color: map-get($map: v.$color, $key: "light-gray");
+    padding: 1.5vw;
+
+    .opening {
+      color: map-get($map: v.$color, $key: "light-cyan");
+      line-height: 100%;
+    }
+
+    .address {
+      line-height: 125%;
+    }
+
+    .name {
+      font-size: 1.6vw;
+      font-weight: 600;
+      line-height: 100%;
+      padding-top: $pt-name;
+    }
+
+    .desc {
+      line-height: 125%;
+      color: rgba(map-get($map: v.$color, $key: "dark-gray"), 0.6);
+    }
+
+    .container {
+      @include m.flex($justify: flex-start);
+      gap: 0.7vw;
+      padding-top: 3.4vw;
+      margin-top: auto;
+
+      .rating {
+        @include m.flex();
+        gap: 0.3vw;
+
+        .number {
+          font-size: 1.2vw;
+          font-weight: 600;
+        }
+      }
+
+      .review {
+        line-height: 100%;
+      }
+    }
+
+    .image {
+      max-width: 25vw;
+      width: 100%;
+      height: 100%;
+      padding: $p-image;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 1.2vw;
+      }
+    }
+
+    @if $layout-type == "default" {
+      @include m.flex(
+        $direction: column,
+        $justify: flex-start,
+        $align: flex-start
+      );
+      gap: $info-gap;
+
+      .image {
+        max-height: $image-max-height;
+      }
+    } @else if $layout-type == "active" {
+      @include m.flex($justify: space-between, $align: flex-start);
+      gap: $info-gap;
+
+      .image {
+        max-height: $image-max-height;
+      }
+
+      .info {
+        width: 100%;
+        @include m.flex(
+          $direction: column,
+          $justify: flex-start,
+          $align: flex-start
+        );
+        gap: 0.3vw;
+
+        .container {
+          @include m.flex($justify: flex-start);
+          gap: 0.7vw;
+          padding-top: 3.4vw;
+          margin-top: auto;
+
+          .rating {
+            @include m.flex();
+            gap: 0.3vw;
+
+            .number {
+              font-size: 1.2vw;
+              font-weight: 600;
+            }
+          }
+
+          .review {
+            line-height: 100%;
+          }
+        }
+      }
+    }
+  }
+}
