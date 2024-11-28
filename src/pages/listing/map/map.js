@@ -90,7 +90,7 @@ export async function displayMap() {
 async function fetchRoads(longitude, latitude, maxDistance) {
   try {
     // Ambil token dari cookie
-    const token = Cookies.get("Login");
+    const token = Cookies.get("login");
 
     if (!token) {
       throw new Error("Token is missing in cookies!");
