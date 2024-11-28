@@ -12,7 +12,6 @@ import GeoJSON from "https://cdn.skypack.dev/ol/format/GeoJSON.js";
 import Cookies from "https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.mjs";
 
 const attributions = '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a> ';
-
 const place = [107.57634352477324, -6.87436891415509];
 
 const basemap = new TileLayer({
@@ -56,6 +55,8 @@ const markerLayer = new VectorLayer({
   }),
 });
 
+let clickedCoordinates = null; // Variabel untuk menyimpan koordinat yang diklik
+
 // Inisialisasi peta
 export async function displayMap() {
   const map = new Map({
@@ -65,33 +66,36 @@ export async function displayMap() {
   });
 
   // Tangani klik pada peta
-  map.on("singleclick", async function (event) {
-    const coordinates = toLonLat(event.coordinate); // Dapatkan koordinat dalam format lon/lat
-    const longitude = coordinates[0];
-    const latitude = coordinates[1];
-    const maxDistance = 600; // Contoh jarak maksimum
+  map.on("singleclick", function (event) {
+    clickedCoordinates = toLonLat(event.coordinate); // Dapatkan koordinat dalam format lon/lat
+    console.log(`Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
+    addMarker(event.coordinate); // Tambahkan marker di lokasi klik
+  });
 
-    console.log(`Clicked on: ${longitude}, ${latitude}`);
+  // Tambahkan event listener untuk tombol "Search"
+  document.getElementById("searchRoad").addEventListener("click", async function () {
+    if (clickedCoordinates) {
+      const maxDistance = document.getElementById("maxDistance").value;
+      if (!maxDistance || isNaN(maxDistance)) {
+        alert("Please enter a valid max distance!");
+        return;
+      }
 
-    // Tambahkan marker di lokasi klik
-    addMarker(event.coordinate);
-
-    // Panggil backend untuk mendapatkan data jalan
-    const response = await fetchRoads(longitude, latitude, maxDistance);
-
-    if (response) {
-      const geoJSON = convertToGeoJSON(response);
-      displayRoads(geoJSON);
+      const response = await fetchRoads(clickedCoordinates[0], clickedCoordinates[1], Number(maxDistance));
+      if (response) {
+        const geoJSON = convertToGeoJSON(response);
+        displayRoads(geoJSON); // Tampilkan jalan pada peta
+      }
+    } else {
+      alert("Please click on the map first!");
     }
   });
 }
 
-// Fungsi untuk fetch data dari backend
+// Fungsi untuk fetch data roads dari backend
 async function fetchRoads(longitude, latitude, maxDistance) {
   try {
-    // Ambil token dari cookie
-    const token = Cookies.get("Login");
-
+    const token = Cookies.get("login");
     if (!token) {
       throw new Error("Token is missing in cookies!");
     }
@@ -100,7 +104,7 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Login: token, // Gunakan token dari cookie
+        Login: token,
       },
       body: JSON.stringify({
         long: longitude,
@@ -113,9 +117,7 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log("Roads fetched:", data);
-    return data; // Data dari backend
+    return await response.json();
   } catch (error) {
     console.error("Error fetching roads:", error);
     return null;
@@ -152,7 +154,6 @@ function addMarker(coordinate) {
     geometry: new Point(coordinate),
   });
 
-  // Hapus marker sebelumnya dan tambahkan marker baru
-  markerSource.clear();
-  markerSource.addFeature(marker);
+  markerSource.clear(); // Hapus marker sebelumnya
+  markerSource.addFeature(marker); // Tambahkan marker baru
 }
