@@ -46,5 +46,33 @@
     &-location {
       @include filter-options();
     }
+
+    &-max-distance{
+      @include filter-options();
+
+      .input{
+        border-radius: 1vh;
+        padding: .5vh;
+        border: 1px solid map-get($map: v.$color, $key: "dark-gray");
+        background-color: transparent;
+      }
+
+      #searchRoad{
+        border-radius: 1vh;
+        padding: .5vh;
+        border: 1px solid map-get($map: v.$color, $key: "light-black");
+        color: map-get($map: v.$color, $key: "dark-gray");
+      }
+    }
+    &-region{
+      @include filter-options();
+
+      #searchRegion{
+        border-radius: 1vh;
+        padding: .5vh;
+        border: 1px solid map-get($map: v.$color, $key: "light-black");
+        color: map-get($map: v.$color, $key: "dark-gray");
+      }
+    }
   }
 }

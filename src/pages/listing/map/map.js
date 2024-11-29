@@ -5,13 +5,20 @@ import VectorLayer from "https://cdn.skypack.dev/ol/layer/Vector.js";
 import VectorSource from "https://cdn.skypack.dev/ol/source/Vector.js";
 import OSM from "https://cdn.skypack.dev/ol/source/OSM.js";
 import { fromLonLat, toLonLat } from "https://cdn.skypack.dev/ol/proj.js";
-import { Style, Stroke, Icon } from "https://cdn.skypack.dev/ol/style.js";
+import {
+  Style,
+  Stroke,
+  Icon,
+  Text,
+  Fill,
+} from "https://cdn.skypack.dev/ol/style.js";
 import Point from "https://cdn.skypack.dev/ol/geom/Point.js";
 import Feature from "https://cdn.skypack.dev/ol/Feature.js";
 import GeoJSON from "https://cdn.skypack.dev/ol/format/GeoJSON.js";
 import Cookies from "https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.mjs";
 
-const attributions = '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a> ';
+const attributions =
+  '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a> ';
 const place = [107.57634352477324, -6.87436891415509];
 
 const basemap = new TileLayer({
@@ -68,28 +75,101 @@ export async function displayMap() {
   // Tangani klik pada peta
   map.on("singleclick", function (event) {
     clickedCoordinates = toLonLat(event.coordinate); // Dapatkan koordinat dalam format lon/lat
-    console.log(`Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
+    console.log(
+      `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
+    );
     addMarker(event.coordinate); // Tambahkan marker di lokasi klik
   });
 
-  // Tambahkan event listener untuk tombol "Search"
-  document.getElementById("searchRoad").addEventListener("click", async function () {
-    if (clickedCoordinates) {
-      const maxDistance = document.getElementById("maxDistance").value;
-      if (!maxDistance || isNaN(maxDistance)) {
-        alert("Please enter a valid max distance!");
-        return;
-      }
+  // Tambahkan event listener untuk tombol "SearchRegion"
+  document
+    .getElementById("searchRegion")
+    .addEventListener("click", async function () {
+      if (clickedCoordinates) {
+        const [longitude, latitude] = clickedCoordinates;
 
-      const response = await fetchRoads(clickedCoordinates[0], clickedCoordinates[1], Number(maxDistance));
-      if (response) {
-        const geoJSON = convertToGeoJSON(response);
-        displayRoads(geoJSON); // Tampilkan jalan pada peta
+        // Fetch GeoJSON dari API
+        const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
+        if (geoJSON) {
+          displayGeoJSONOnMap(geoJSON); // Tampilkan GeoJSON pada peta
+        } else {
+          alert("Failed to fetch region data. Please try again.");
+        }
+      } else {
+        alert("Please click on the map to select a region.");
       }
-    } else {
-      alert("Please click on the map first!");
+    });
+
+  // Tambahkan event listener untuk tombol "SearchRoad"
+  document
+    .getElementById("searchRoad")
+    .addEventListener("click", async function () {
+      if (clickedCoordinates) {
+        const maxDistance = document.getElementById("maxDistance").value;
+        if (!maxDistance || isNaN(maxDistance)) {
+          alert("Please enter a valid max distance!");
+          return;
+        }
+
+        const response = await fetchRoads(
+          clickedCoordinates[0],
+          clickedCoordinates[1],
+          Number(maxDistance)
+        );
+        if (response) {
+          const geoJSON = convertToGeoJSON(response);
+          displayRoads(geoJSON); // Tampilkan jalan pada peta
+        }
+      } else {
+        alert("Please click on the map first!");
+      }
+    });
+}
+
+// Fungsi untuk fetch GeoJSON region dari backend
+async function fetchRegionGeoJSON(longitude, latitude) {
+  try {
+    const token = Cookies.get("login");
+    if (!token) {
+      throw new Error("Token is missing in cookies!");
     }
+
+    const response = await fetch(
+      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/region",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Login: token,
+        },
+        body: JSON.stringify({
+          long: longitude,
+          lat: latitude,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching GeoJSON region:", error);
+    return null;
+  }
+}
+
+// Fungsi untuk menampilkan GeoJSON pada layer peta
+function displayGeoJSONOnMap(geoJSON) {
+  const format = new GeoJSON();
+  const features = format.readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
   });
+
+  roadsSource.clear(); // Hapus fitur sebelumnya
+  roadsSource.addFeatures(features); // Tambahkan fitur baru
 }
 
 // Fungsi untuk fetch data roads dari backend
@@ -100,18 +180,21 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       throw new Error("Token is missing in cookies!");
     }
 
-    const response = await fetch("https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/roads", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Login: token,
-      },
-      body: JSON.stringify({
-        long: longitude,
-        lat: latitude,
-        max_distance: maxDistance,
-      }),
-    });
+    const response = await fetch(
+      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/roads",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Login: token,
+        },
+        body: JSON.stringify({
+          long: longitude,
+          lat: latitude,
+          max_distance: maxDistance,
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);

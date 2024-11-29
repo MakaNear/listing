@@ -381,6 +381,68 @@
 .listing-filter .filter-content-location .options-list {
   width: 100%;
 }
+.listing-filter .filter-content-max-distance {
+  display: grid;
+  gap: 1.2vh;
+}
+.listing-filter .filter-content-max-distance .title {
+  font-weight: 600;
+  line-height: 100%;
+}
+.listing-filter .filter-content-max-distance .options {
+  background-color: #eef1f3;
+  border-radius: 0.9vw;
+  padding: 1vw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+  cursor: pointer;
+  gap: 0.6vw;
+}
+.listing-filter .filter-content-max-distance .options-list {
+  width: 100%;
+}
+.listing-filter .filter-content-max-distance .input {
+  border-radius: 1vh;
+  padding: 0.5vh;
+  border: 1px solid #595959;
+  background-color: transparent;
+}
+.listing-filter .filter-content-max-distance #searchRoad {
+  border-radius: 1vh;
+  padding: 0.5vh;
+  border: 1px solid #070f2b;
+  color: #595959;
+}
+.listing-filter .filter-content-region {
+  display: grid;
+  gap: 1.2vh;
+}
+.listing-filter .filter-content-region .title {
+  font-weight: 600;
+  line-height: 100%;
+}
+.listing-filter .filter-content-region .options {
+  background-color: #eef1f3;
+  border-radius: 0.9vw;
+  padding: 1vw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+  cursor: pointer;
+  gap: 0.6vw;
+}
+.listing-filter .filter-content-region .options-list {
+  width: 100%;
+}
+.listing-filter .filter-content-region #searchRegion {
+  border-radius: 1vh;
+  padding: 0.5vh;
+  border: 1px solid #070f2b;
+  color: #595959;
+}
 .listing-overview {
   padding: 0 3.4vw 2.4vw 1.7vw;
   position: relative;
@@ -619,4 +681,4 @@ body {
   font-size: 1.2vw;
   font-family: "Lato", sans-serif;
   color: #595959;
-}
+}/*# sourceMappingURL=main.css.map */
