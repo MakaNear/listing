@@ -5,12 +5,7 @@ import VectorLayer from "https://cdn.skypack.dev/ol/layer/Vector.js";
 import VectorSource from "https://cdn.skypack.dev/ol/source/Vector.js";
 import OSM from "https://cdn.skypack.dev/ol/source/OSM.js";
 import { fromLonLat, toLonLat } from "https://cdn.skypack.dev/ol/proj.js";
-import {
-  Style,
-  Stroke,
-  Icon,
-  Fill,
-} from "https://cdn.skypack.dev/ol/style.js";
+import { Style, Stroke, Icon, Fill } from "https://cdn.skypack.dev/ol/style.js";
 import Point from "https://cdn.skypack.dev/ol/geom/Point.js";
 import Feature from "https://cdn.skypack.dev/ol/Feature.js";
 import GeoJSON from "https://cdn.skypack.dev/ol/format/GeoJSON.js";
@@ -49,7 +44,9 @@ const markerLayer = new VectorLayer({
   source: markerSource,
   style: new Style({
     image: new Icon({
-      src: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+      src:
+        "data:image/svg+xml;charset=utf-8," +
+        encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
           <path fill="red" d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
         </svg>`),
@@ -87,45 +84,61 @@ export async function displayMap() {
   // Tangani klik pada peta
   map.on("singleclick", function (event) {
     clickedCoordinates = toLonLat(event.coordinate); // Konversi koordinat ke lon/lat
-    console.log(`Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
+    console.log(
+      `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
+    );
     addMarker(event.coordinate); // Tambahkan marker pada lokasi yang diklik
   });
 
   // Event listener untuk tombol "SearchRegion"
-  document.getElementById("searchRegion").addEventListener("click", async function () {
-    if (clickedCoordinates) {
-      const [longitude, latitude] = clickedCoordinates;
+  document
+    .getElementById("searchRegion")
+    .addEventListener("click", async function () {
+      if (clickedCoordinates) {
+        const [longitude, latitude] = clickedCoordinates;
 
-      // Fetch GeoJSON dari API
-      const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
-      if (geoJSON) {
-        displayPolygonOnMap(geoJSON); // Tampilkan poligon dari GeoJSON
+        // Kosongkan jalan sebelum menampilkan region
+        roadsSource.clear();
+
+        // Fetch GeoJSON dari API
+        const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
+        if (geoJSON) {
+          displayPolygonOnMap(geoJSON); // Tampilkan poligon dari GeoJSON
+        } else {
+          alert("Failed to fetch region data. Please try again.");
+        }
       } else {
-        alert("Failed to fetch region data. Please try again.");
+        alert("Please click on the map to select a region.");
       }
-    } else {
-      alert("Please click on the map to select a region.");
-    }
-  });
+    });
 
   // Event listener untuk tombol "SearchRoad"
-  document.getElementById("searchRoad").addEventListener("click", async function () {
-    if (clickedCoordinates) {
-      const maxDistance = document.getElementById("maxDistance").value;
-      if (!maxDistance || isNaN(maxDistance)) {
-        alert("Please enter a valid max distance!");
-        return;
-      }
+  document
+    .getElementById("searchRoad")
+    .addEventListener("click", async function () {
+      if (clickedCoordinates) {
+        const maxDistance = document.getElementById("maxDistance").value;
+        if (!maxDistance || isNaN(maxDistance)) {
+          alert("Please enter a valid max distance!");
+          return;
+        }
 
-      const response = await fetchRoads(clickedCoordinates[0], clickedCoordinates[1], Number(maxDistance));
-      if (response) {
-        const geoJSON = convertToGeoJSON(response);
-        displayRoads(geoJSON); // Tampilkan jalan pada peta
+        // Kosongkan region sebelum menampilkan jalan
+        polygonSource.clear();
+
+        const response = await fetchRoads(
+          clickedCoordinates[0],
+          clickedCoordinates[1],
+          Number(maxDistance)
+        );
+        if (response) {
+          const geoJSON = convertToGeoJSON(response);
+          displayRoads(geoJSON); // Tampilkan jalan pada peta
+        }
+      } else {
+        alert("Please click on the map first!");
       }
-    } else {
-      alert("Please click on the map first!");
-    }
-  });
+    });
 }
 
 // Fungsi untuk fetch GeoJSON region dari backend
@@ -136,17 +149,20 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       throw new Error("Token is missing in cookies!");
     }
 
-    const response = await fetch("https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/region", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Login: token,
-      },
-      body: JSON.stringify({
-        long: longitude,
-        lat: latitude,
-      }),
-    });
+    const response = await fetch(
+      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/region",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Login: token,
+        },
+        body: JSON.stringify({
+          long: longitude,
+          lat: latitude,
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -178,18 +194,21 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       throw new Error("Token is missing in cookies!");
     }
 
-    const response = await fetch("https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/roads", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Login: token,
-      },
-      body: JSON.stringify({
-        long: longitude,
-        lat: latitude,
-        max_distance: maxDistance,
-      }),
-    });
+    const response = await fetch(
+      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/roads",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Login: token,
+        },
+        body: JSON.stringify({
+          long: longitude,
+          lat: latitude,
+          max_distance: maxDistance,
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
