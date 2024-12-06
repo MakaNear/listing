@@ -9,24 +9,20 @@ import { Style, Stroke, Icon, Fill } from "https://cdn.skypack.dev/ol/style.js";
 import Point from "https://cdn.skypack.dev/ol/geom/Point.js";
 import Feature from "https://cdn.skypack.dev/ol/Feature.js";
 import GeoJSON from "https://cdn.skypack.dev/ol/format/GeoJSON.js";
-import Cookies from "https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.mjs";
 
 const attributions =
-  '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a> ';
+  '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a>';
 const place = [107.57634352477324, -6.87436891415509];
 
-// Layer dan sumber data untuk peta dasar
 const basemap = new TileLayer({
   source: new OSM({ attributions: attributions }),
 });
 
-// Konfigurasi tampilan awal peta
 const defaultstartmap = new View({
   center: fromLonLat(place),
   zoom: 16,
 });
 
-// Layer dan sumber data untuk jalan
 const roadsSource = new VectorSource();
 const roadsLayer = new VectorLayer({
   source: roadsSource,
@@ -38,7 +34,6 @@ const roadsLayer = new VectorLayer({
   }),
 });
 
-// Layer dan sumber data untuk marker
 const markerSource = new VectorSource();
 const markerLayer = new VectorLayer({
   source: markerSource,
@@ -56,13 +51,12 @@ const markerLayer = new VectorLayer({
   }),
 });
 
-// Layer dan sumber data untuk poligon
 const polygonSource = new VectorSource();
 const polygonLayer = new VectorLayer({
   source: polygonSource,
   style: new Style({
     fill: new Fill({
-      color: "rgba(165, 163, 164, 0.59)", // Warna arsiran (biru transparan)
+      color: "rgba(165, 163, 164, 0.59)",
     }),
     stroke: new Stroke({
       color: "gray",
@@ -71,48 +65,37 @@ const polygonLayer = new VectorLayer({
   }),
 });
 
-let clickedCoordinates = null; // Variabel untuk menyimpan koordinat yang diklik
+let clickedCoordinates = null;
 
-// Inisialisasi peta
 export async function displayMap() {
   const map = new Map({
     target: "listing-map",
-    layers: [basemap, roadsLayer, markerLayer, polygonLayer], // Tambahkan polygonLayer
+    layers: [basemap, roadsLayer, markerLayer, polygonLayer],
     view: defaultstartmap,
   });
 
-  // Tangani klik pada peta
   map.on("singleclick", function (event) {
-    clickedCoordinates = toLonLat(event.coordinate); // Konversi koordinat ke lon/lat
+    clickedCoordinates = toLonLat(event.coordinate);
     console.log(
       `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
     );
-    addMarker(event.coordinate); // Tambahkan marker pada lokasi yang diklik
+    addMarker(event.coordinate);
   });
 
-  // Event listener untuk tombol "SearchRegion"
   document
     .getElementById("searchRegion")
     .addEventListener("click", async function () {
       if (clickedCoordinates) {
         const [longitude, latitude] = clickedCoordinates;
-
-        // Kosongkan jalan sebelum menampilkan region
         roadsSource.clear();
 
-        // Fetch GeoJSON dari API
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
-          displayPolygonOnMap(geoJSON); // Tampilkan poligon dari GeoJSON
-        } else {
-          alert("Failed to fetch region data. Please try again.");
+          displayPolygonOnMap(geoJSON);
         }
-      } else {
-        alert("Please click on the map to select a region.");
       }
     });
 
-  // Event listener untuk tombol "SearchRoad"
   document
     .getElementById("searchRoad")
     .addEventListener("click", async function () {
@@ -123,9 +106,7 @@ export async function displayMap() {
           return;
         }
 
-        // Kosongkan region sebelum menampilkan jalan
         polygonSource.clear();
-
         const response = await fetchRoads(
           clickedCoordinates[0],
           clickedCoordinates[1],
@@ -133,7 +114,7 @@ export async function displayMap() {
         );
         if (response) {
           const geoJSON = convertToGeoJSON(response);
-          displayRoads(geoJSON); // Tampilkan jalan pada peta
+          displayRoads(geoJSON);
         }
       } else {
         alert("Please click on the map first!");
@@ -141,11 +122,22 @@ export async function displayMap() {
     });
 }
 
-// Fungsi untuk fetch GeoJSON region dari backend
 async function fetchRegionGeoJSON(longitude, latitude) {
   try {
-    const token = Cookies.get("login");
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("login="))
+      ?.split("=")[1];
+
     if (!token) {
+      Swal.fire({
+        title: "Authentication Error",
+        text: "You must be logged in to perform this action!",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        window.location.href = "/login";
+      });
       throw new Error("Token is missing in cookies!");
     }
 
@@ -175,22 +167,22 @@ async function fetchRegionGeoJSON(longitude, latitude) {
   }
 }
 
-// Fungsi untuk menampilkan poligon pada peta
-function displayPolygonOnMap(geoJSON) {
-  const features = new GeoJSON().readFeatures(geoJSON, {
-    dataProjection: "EPSG:4326", // Format GeoJSON dari API
-    featureProjection: "EPSG:3857", // Format peta OpenLayers
-  });
-
-  polygonSource.clear(); // Hapus poligon sebelumnya
-  polygonSource.addFeatures(features); // Tambahkan poligon baru
-}
-
-// Fungsi untuk fetch data roads dari backend
 async function fetchRoads(longitude, latitude, maxDistance) {
   try {
-    const token = Cookies.get("login");
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("login="))
+      ?.split("=")[1];
+
     if (!token) {
+      Swal.fire({
+        title: "Authentication Error",
+        text: "You must be logged in to perform this action!",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        window.location.href = "/login";
+      });
       throw new Error("Token is missing in cookies!");
     }
 
@@ -221,7 +213,6 @@ async function fetchRoads(longitude, latitude, maxDistance) {
   }
 }
 
-// Fungsi untuk konversi ke GeoJSON
 function convertToGeoJSON(response) {
   return {
     type: "FeatureCollection",
@@ -233,24 +224,32 @@ function convertToGeoJSON(response) {
   };
 }
 
-// Fungsi untuk menampilkan jalan pada peta
+function displayPolygonOnMap(geoJSON) {
+  const features = new GeoJSON().readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
+
+  polygonSource.clear();
+  polygonSource.addFeatures(features);
+}
+
 function displayRoads(geoJSON) {
   const format = new GeoJSON();
   const features = format.readFeatures(geoJSON, {
-    dataProjection: "EPSG:4326", // Format GeoJSON dari API
-    featureProjection: "EPSG:3857", // Format peta OpenLayers
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
   });
 
-  roadsSource.clear(); // Hapus jalan sebelumnya
-  roadsSource.addFeatures(features); // Tambahkan jalan baru
+  roadsSource.clear();
+  roadsSource.addFeatures(features);
 }
 
-// Fungsi untuk menambahkan marker
 function addMarker(coordinate) {
   const marker = new Feature({
     geometry: new Point(coordinate),
   });
 
-  markerSource.clear(); // Hapus marker sebelumnya
-  markerSource.addFeature(marker); // Tambahkan marker baru
+  markerSource.clear();
+  markerSource.addFeature(marker);
 }
