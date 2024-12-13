@@ -146,9 +146,16 @@ export async function displayMap() {
           clickedCoordinates[1],
           Number(maxDistance)
         );
+
         if (response) {
           displayRoadResults(response);
         }
+      } else {
+        Swal.fire({
+          title: "No Location Selected",
+          text: "Please click on the map first!",
+          icon: "info",
+        });
       }
     });
 }
@@ -229,7 +236,16 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       }
     );
 
-    return await response.json();
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Tampilkan hasil jalan di bagian HTML
+    displayRoadResults(data);
+
+    return data;
   } catch (error) {
     console.error("Error fetching roads data:", error);
     return null;
@@ -258,16 +274,29 @@ function displayRegionResults(geoJSON) {
 }
 
 function displayRoadResults(data) {
-  const layout = document.querySelector(".listing-overview-layout");
-  layout.innerHTML = `
+  const resultContainer = document.getElementById("resultContainer");
+  const resultCount = document.getElementById("resultCount");
+
+  if (data.length === 0) {
+    resultContainer.innerHTML =
+      "<p>No roads found within the specified distance.</p>";
+    resultCount.innerText = "0 results";
+    return;
+  }
+
+  // Perbarui jumlah hasil
+  resultCount.innerText = `${data.length} results`;
+
+  // Render hasil ke dalam container
+  resultContainer.innerHTML = `
     <h4>Roads Info:</h4>
-    <ul>
+    <ul class="result-list">
       ${data
         .map(
           (road) => `
-        <li>
-          <strong>Name:</strong> ${road.properties.name || "Unknown"}<br>
-          <strong>Type:</strong> ${road.properties.highway || "Unknown"}
+        <li class="result-item">
+          <p><strong>Name:</strong> ${road.properties.name || "Unknown"}</p>
+          <p><strong>Type:</strong> ${road.properties.highway || "Unknown"}</p>
         </li>
       `
         )
