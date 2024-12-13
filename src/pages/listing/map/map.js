@@ -10,7 +10,8 @@ import Point from "https://cdn.skypack.dev/ol/geom/Point.js";
 import Feature from "https://cdn.skypack.dev/ol/Feature.js";
 import GeoJSON from "https://cdn.skypack.dev/ol/format/GeoJSON.js";
 
-const attributions = '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a>';
+const attributions =
+  '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a>';
 const place = [107.57634352477324, -6.87436891415509];
 
 const basemap = new TileLayer({
@@ -65,7 +66,6 @@ const polygonLayer = new VectorLayer({
 });
 
 let clickedCoordinates = null;
-let regionLocked = false; // Lock to prevent new input after showing region info
 
 export async function displayMap() {
   const map = new Map({
@@ -75,25 +75,43 @@ export async function displayMap() {
   });
 
   map.on("singleclick", function (event) {
-    if (regionLocked) return; // Prevent new input when region is locked
-
     clickedCoordinates = toLonLat(event.coordinate);
-    console.log(`Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
+    console.log(
+      `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
+    );
     addMarker(event.coordinate);
 
+    // Check if clicked on a road (line) or polygon
     map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
-      if (layer === polygonLayer) {
+      if (layer === roadsLayer) {
+        // Handle click on roads
+        console.log("Road GeoJSON:", feature.getProperties());
+        Swal.fire({
+          title: "Road Info",
+          text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
+            feature.get("highway") || "Unknown"
+          }`,
+          icon: "info",
+        });
+      } else if (layer === polygonLayer) {
+        // Handle click on polygons
         console.log("Polygon GeoJSON:", feature.getProperties());
         Swal.fire({
           title: "Polygon Info",
-          html: `<p><strong>District:</strong> ${feature.get("district") || "Unknown"}</p>
-                 <p><strong>Province:</strong> ${feature.get("province") || "Unknown"}</p>
-                 <p><strong>Sub-district:</strong> ${feature.get("sub_district") || "Unknown"}</p>
-                 <p><strong>Village:</strong> ${feature.get("village") || "Unknown"}</p>`,
+          html: `<p><strong>District:</strong> ${
+            feature.get("district") || "Unknown"
+          }</p>
+                 <p><strong>Province:</strong> ${
+                   feature.get("province") || "Unknown"
+                 }</p>
+                 <p><strong>Sub-district:</strong> ${
+                   feature.get("sub_district") || "Unknown"
+                 }</p>
+                 <p><strong>Village:</strong> ${
+                   feature.get("village") || "Unknown"
+                 }</p>`,
           icon: "info",
         });
-
-        regionLocked = true; // Lock input after region info is shown
       }
     });
   });
@@ -115,15 +133,6 @@ export async function displayMap() {
   document
     .getElementById("searchRoad")
     .addEventListener("click", async function () {
-      if (regionLocked) {
-        Swal.fire({
-          title: "Action Blocked",
-          text: "Region is locked. Reset to input new data!",
-          icon: "warning",
-        });
-        return;
-      }
-
       if (clickedCoordinates) {
         const maxDistance = document.getElementById("maxDistance").value;
         if (!maxDistance || isNaN(maxDistance)) {
@@ -145,14 +154,6 @@ export async function displayMap() {
         alert("Please click on the map first!");
       }
     });
-
-  document.getElementById("resetMap").addEventListener("click", function () {
-    regionLocked = false; // Unlock region input
-    clickedCoordinates = null;
-    markerSource.clear();
-    polygonSource.clear();
-    roadsSource.clear();
-  });
 }
 
 async function fetchRegionGeoJSON(longitude, latitude) {
@@ -193,9 +194,95 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    // Tampilkan hasil region di elemen HTML
+    const regionResult = document.getElementById("regionResult");
+    regionResult.innerHTML = `
+      <h4>Region Info:</h4>
+      <ul>
+        <li><strong>District:</strong> ${
+          data.features[0]?.properties?.district || "Unknown"
+        }</li>
+        <li><strong>Province:</strong> ${
+          data.features[0]?.properties?.province || "Unknown"
+        }</li>
+        <li><strong>Sub-district:</strong> ${
+          data.features[0]?.properties?.sub_district || "Unknown"
+        }</li>
+        <li><strong>Village:</strong> ${
+          data.features[0]?.properties?.village || "Unknown"
+        }</li>
+      </ul>
+    `;
+
+    return data;
   } catch (error) {
     console.error("Error fetching GeoJSON region:", error);
+    return null;
+  }
+}
+
+async function fetchRoads(longitude, latitude, maxDistance) {
+  try {
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("login="))
+      ?.split("=")[1];
+
+    if (!token) {
+      Swal.fire({
+        title: "Authentication Error",
+        text: "You must be logged in to perform this action!",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        window.location.href = "/login";
+      });
+      throw new Error("Token is missing in cookies!");
+    }
+
+    const response = await fetch(
+      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/roads",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Login: token,
+        },
+        body: JSON.stringify({
+          long: longitude,
+          lat: latitude,
+          max_distance: maxDistance,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Tampilkan hasil jalan di elemen HTML
+    const roadsResult = document.getElementById("roadsResult");
+    roadsResult.innerHTML = `
+      <h4>Roads Info:</h4>
+      <ul>
+        ${data
+          .map(
+            (road) => `
+          <li><strong>Name:</strong> ${road.properties.name || "Unknown"} <br>
+          <strong>Type:</strong> ${road.properties.highway || "Unknown"}</li>
+        `
+          )
+          .join("")}
+      </ul>
+    `;
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching roads:", error);
     return null;
   }
 }
