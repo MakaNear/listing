@@ -10,8 +10,7 @@ import Point from "https://cdn.skypack.dev/ol/geom/Point.js";
 import Feature from "https://cdn.skypack.dev/ol/Feature.js";
 import GeoJSON from "https://cdn.skypack.dev/ol/format/GeoJSON.js";
 
-const attributions =
-  '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a>';
+const attributions = '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a>';
 const place = [107.57634352477324, -6.87436891415509];
 
 const basemap = new TileLayer({
@@ -66,6 +65,7 @@ const polygonLayer = new VectorLayer({
 });
 
 let clickedCoordinates = null;
+let regionLocked = false; // Lock to prevent new input after showing region info
 
 export async function displayMap() {
   const map = new Map({
@@ -75,43 +75,25 @@ export async function displayMap() {
   });
 
   map.on("singleclick", function (event) {
+    if (regionLocked) return; // Prevent new input when region is locked
+
     clickedCoordinates = toLonLat(event.coordinate);
-    console.log(
-      `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
-    );
+    console.log(`Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
     addMarker(event.coordinate);
 
-    // Check if clicked on a road (line) or polygon
     map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
-      if (layer === roadsLayer) {
-        // Handle click on roads
-        console.log("Road GeoJSON:", feature.getProperties());
-        Swal.fire({
-          title: "Road Info",
-          text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
-            feature.get("highway") || "Unknown"
-          }`,
-          icon: "info",
-        });
-      } else if (layer === polygonLayer) {
-        // Handle click on polygons
+      if (layer === polygonLayer) {
         console.log("Polygon GeoJSON:", feature.getProperties());
         Swal.fire({
           title: "Polygon Info",
-          html: `<p><strong>District:</strong> ${
-            feature.get("district") || "Unknown"
-          }</p>
-                 <p><strong>Province:</strong> ${
-                   feature.get("province") || "Unknown"
-                 }</p>
-                 <p><strong>Sub-district:</strong> ${
-                   feature.get("sub_district") || "Unknown"
-                 }</p>
-                 <p><strong>Village:</strong> ${
-                   feature.get("village") || "Unknown"
-                 }</p>`,
+          html: `<p><strong>District:</strong> ${feature.get("district") || "Unknown"}</p>
+                 <p><strong>Province:</strong> ${feature.get("province") || "Unknown"}</p>
+                 <p><strong>Sub-district:</strong> ${feature.get("sub_district") || "Unknown"}</p>
+                 <p><strong>Village:</strong> ${feature.get("village") || "Unknown"}</p>`,
           icon: "info",
         });
+
+        regionLocked = true; // Lock input after region info is shown
       }
     });
   });
@@ -133,6 +115,15 @@ export async function displayMap() {
   document
     .getElementById("searchRoad")
     .addEventListener("click", async function () {
+      if (regionLocked) {
+        Swal.fire({
+          title: "Action Blocked",
+          text: "Region is locked. Reset to input new data!",
+          icon: "warning",
+        });
+        return;
+      }
+
       if (clickedCoordinates) {
         const maxDistance = document.getElementById("maxDistance").value;
         if (!maxDistance || isNaN(maxDistance)) {
@@ -154,6 +145,14 @@ export async function displayMap() {
         alert("Please click on the map first!");
       }
     });
+
+  document.getElementById("resetMap").addEventListener("click", function () {
+    regionLocked = false; // Unlock region input
+    clickedCoordinates = null;
+    markerSource.clear();
+    polygonSource.clear();
+    roadsSource.clear();
+  });
 }
 
 async function fetchRegionGeoJSON(longitude, latitude) {
