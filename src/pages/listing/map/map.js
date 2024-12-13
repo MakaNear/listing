@@ -75,59 +75,74 @@ export async function displayMap() {
   });
 
   map.on("singleclick", function (event) {
-    // Periksa apakah klik dilakukan pada fitur di layer
     let featureClicked = false;
-
+  
     map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
       if (layer === roadsLayer || layer === polygonLayer) {
-        // Jika fitur di roadsLayer atau polygonLayer diklik
         featureClicked = true;
-
+  
         if (layer === roadsLayer) {
-          // Tampilkan informasi jalan
-          console.log("Road GeoJSON:", feature.getProperties());
+          // Data untuk Roads (Jalan)
+          const roadInfo = `
+            <div class="result-item">
+              <h4>Road Info</h4>
+              <p><strong>Name:</strong> ${feature.get("name") || "Unknown"}</p>
+              <p><strong>Type:</strong> ${feature.get("highway") || "Unknown"}</p>
+            </div>
+          `;
+          document.getElementById("resultContainer").innerHTML = roadInfo;
+  
+          // SweetAlert tetap ditampilkan
           Swal.fire({
             title: "Road Info",
-            text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
-              feature.get("highway") || "Unknown"
-            }`,
-            icon: "info",
+            html: `
+              <p><strong>Name:</strong> ${feature.get("name") || "Unknown"}</p>
+              <p><strong>Type:</strong> ${feature.get("highway") || "Unknown"}</p>
+            `,
+            showCloseButton: true, // Menambahkan tombol "Close"
+            showConfirmButton: false, // Tidak menampilkan tombol konfirmasi
+            allowOutsideClick: false, // Mencegah popup ditutup dengan klik di luar
           });
         } else if (layer === polygonLayer) {
-          // Tampilkan informasi polygon
-          console.log("Polygon GeoJSON:", feature.getProperties());
+          // Data untuk Polygon (Region)
+          const polygonInfo = `
+            <div class="result-item">
+              <h4>Polygon Info</h4>
+              <p><strong>District:</strong> ${feature.get("district") || "Unknown"}</p>
+              <p><strong>Province:</strong> ${feature.get("province") || "Unknown"}</p>
+              <p><strong>Sub-district:</strong> ${feature.get("sub_district") || "Unknown"}</p>
+              <p><strong>Village:</strong> ${feature.get("village") || "Unknown"}</p>
+            </div>
+          `;
+          document.getElementById("resultContainer").innerHTML = polygonInfo;
+  
+          // SweetAlert tetap ditampilkan
           Swal.fire({
             title: "Polygon Info",
-            html: `<p><strong>District:</strong> ${
-              feature.get("district") || "Unknown"
-            }</p>
-                   <p><strong>Province:</strong> ${
-                     feature.get("province") || "Unknown"
-                   }</p>
-                   <p><strong>Sub-district:</strong> ${
-                     feature.get("sub_district") || "Unknown"
-                   }</p>
-                   <p><strong>Village:</strong> ${
-                     feature.get("village") || "Unknown"
-                   }</p>`,
-            icon: "info",
+            html: `
+              <p><strong>District:</strong> ${feature.get("district") || "Unknown"}</p>
+              <p><strong>Province:</strong> ${feature.get("province") || "Unknown"}</p>
+              <p><strong>Sub-district:</strong> ${feature.get("sub_district") || "Unknown"}</p>
+              <p><strong>Village:</strong> ${feature.get("village") || "Unknown"}</p>
+            `,
+            showCloseButton: true, // Menambahkan tombol "Close"
+            showConfirmButton: false, // Tidak menampilkan tombol konfirmasi
+            allowOutsideClick: false, // Mencegah popup ditutup dengan klik di luar
           });
         }
       }
     });
-
+  
     if (featureClicked) {
-      // Jika klik dilakukan pada fitur, blokir penambahan koordinat baru
-      return;
+      return; // Jangan tambahkan koordinat jika fitur sudah diklik
     }
-
+  
     // Jika klik bukan pada fitur, lanjutkan untuk menambahkan koordinat
     clickedCoordinates = toLonLat(event.coordinate);
-    console.log(
-      `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
-    );
+    console.log(`Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
     addMarker(event.coordinate);
   });
+  
 
   document
     .getElementById("searchRegion")
