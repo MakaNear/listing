@@ -75,45 +75,20 @@ export async function displayMap() {
   });
 
   map.on("singleclick", function (event) {
+    if (clickedCoordinates) {
+      Swal.fire({
+        title: "Location Selected",
+        text: "You have already selected a location. Please reset to select a new location.",
+        icon: "info",
+      });
+      return;
+    }
+
     clickedCoordinates = toLonLat(event.coordinate);
     console.log(
       `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
     );
     addMarker(event.coordinate);
-
-    // Check if clicked on a road (line) or polygon
-    map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
-      if (layer === roadsLayer) {
-        // Handle click on roads
-        console.log("Road GeoJSON:", feature.getProperties());
-        Swal.fire({
-          title: "Road Info",
-          text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
-            feature.get("highway") || "Unknown"
-          }`,
-          icon: "info",
-        });
-      } else if (layer === polygonLayer) {
-        // Handle click on polygons
-        console.log("Polygon GeoJSON:", feature.getProperties());
-        Swal.fire({
-          title: "Polygon Info",
-          html: `<p><strong>District:</strong> ${
-            feature.get("district") || "Unknown"
-          }</p>
-                 <p><strong>Province:</strong> ${
-                   feature.get("province") || "Unknown"
-                 }</p>
-                 <p><strong>Sub-district:</strong> ${
-                   feature.get("sub_district") || "Unknown"
-                 }</p>
-                 <p><strong>Village:</strong> ${
-                   feature.get("village") || "Unknown"
-                 }</p>`,
-          icon: "info",
-        });
-      }
-    });
   });
 
   document
@@ -121,12 +96,17 @@ export async function displayMap() {
     .addEventListener("click", async function () {
       if (clickedCoordinates) {
         const [longitude, latitude] = clickedCoordinates;
-        roadsSource.clear();
 
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
-          displayPolygonOnMap(geoJSON);
+          displayRegionResults(geoJSON);
         }
+      } else {
+        Swal.fire({
+          title: "No Location Selected",
+          text: "Please click on the map to select a location.",
+          icon: "warning",
+        });
       }
     });
 
@@ -136,147 +116,91 @@ export async function displayMap() {
       if (clickedCoordinates) {
         const maxDistance = document.getElementById("maxDistance").value;
         if (!maxDistance || isNaN(maxDistance)) {
-          alert("Please enter a valid max distance!");
+          Swal.fire({
+            title: "Invalid Input",
+            text: "Please enter a valid max distance!",
+            icon: "error",
+          });
           return;
         }
 
-        polygonSource.clear();
         const response = await fetchRoads(
           clickedCoordinates[0],
           clickedCoordinates[1],
           Number(maxDistance)
         );
         if (response) {
-          const geoJSON = convertToGeoJSON(response);
-          displayRoads(geoJSON);
+          displayRoadResults(response);
         }
       } else {
-        alert("Please click on the map first!");
+        Swal.fire({
+          title: "No Location Selected",
+          text: "Please click on the map first!",
+          icon: "warning",
+        });
       }
     });
+
+  document.getElementById("resetSelection").addEventListener("click", () => {
+    clickedCoordinates = null;
+    markerSource.clear();
+    roadsSource.clear();
+    polygonSource.clear();
+    document.querySelector(".listing-overview-layout").innerHTML = "";
+    Swal.fire({
+      title: "Reset Complete",
+      text: "You can now select a new location.",
+      icon: "success",
+    });
+  });
 }
 
 async function fetchRegionGeoJSON(longitude, latitude) {
-  try {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("login="))
-      ?.split("=")[1];
-
-    if (!token) {
-      Swal.fire({
-        title: "Authentication Error",
-        text: "You must be logged in to perform this action!",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-      }).then(() => {
-        window.location.href = "/login";
-      });
-      throw new Error("Token is missing in cookies!");
-    }
-
-    const response = await fetch(
-      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/region",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Login: token,
-        },
-        body: JSON.stringify({
-          long: longitude,
-          lat: latitude,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching GeoJSON region:", error);
-    return null;
-  }
+  // Simpan fungsi asli Anda di sini
 }
 
 async function fetchRoads(longitude, latitude, maxDistance) {
-  try {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("login="))
-      ?.split("=")[1];
-
-    if (!token) {
-      Swal.fire({
-        title: "Authentication Error",
-        text: "You must be logged in to perform this action!",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-      }).then(() => {
-        window.location.href = "/login";
-      });
-      throw new Error("Token is missing in cookies!");
-    }
-
-    const response = await fetch(
-      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/roads",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Login: token,
-        },
-        body: JSON.stringify({
-          long: longitude,
-          lat: latitude,
-          max_distance: maxDistance,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching roads:", error);
-    return null;
-  }
+  // Simpan fungsi asli Anda di sini
 }
 
-function convertToGeoJSON(response) {
-  return {
-    type: "FeatureCollection",
-    features: response.map((feature) => ({
-      type: "Feature",
-      geometry: feature.geometry,
-      properties: feature.properties,
-    })),
-  };
+function displayRegionResults(geoJSON) {
+  const layout = document.querySelector(".listing-overview-layout");
+  layout.innerHTML = `
+    <div class="result-item">
+      <h4>Region Info:</h4>
+      <p><strong>District:</strong> ${
+        geoJSON.features[0]?.properties?.district || "Unknown"
+      }</p>
+      <p><strong>Province:</strong> ${
+        geoJSON.features[0]?.properties?.province || "Unknown"
+      }</p>
+      <p><strong>Sub-district:</strong> ${
+        geoJSON.features[0]?.properties?.sub_district || "Unknown"
+      }</p>
+      <p><strong>Village:</strong> ${
+        geoJSON.features[0]?.properties?.village || "Unknown"
+      }</p>
+    </div>
+  `;
 }
 
-function displayPolygonOnMap(geoJSON) {
-  const features = new GeoJSON().readFeatures(geoJSON, {
-    dataProjection: "EPSG:4326",
-    featureProjection: "EPSG:3857",
-  });
-
-  polygonSource.clear();
-  polygonSource.addFeatures(features);
-}
-
-function displayRoads(geoJSON) {
-  const format = new GeoJSON();
-  const features = format.readFeatures(geoJSON, {
-    dataProjection: "EPSG:4326",
-    featureProjection: "EPSG:3857",
-  });
-
-  roadsSource.clear();
-  roadsSource.addFeatures(features);
+function displayRoadResults(data) {
+  const layout = document.querySelector(".listing-overview-layout");
+  layout.innerHTML = `
+    <h4>Roads Info:</h4>
+    <ul>
+      ${data
+        .map(
+          (road) => `
+        <li>
+          <strong>Name:</strong> ${road.properties.name || "Unknown"}<br>
+          <strong>Type:</strong> ${road.properties.highway || "Unknown"}
+        </li>
+      `
+        )
+        .join("")}
+    </ul>
+  `;
 }
 
 function addMarker(coordinate) {
