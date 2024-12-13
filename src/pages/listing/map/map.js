@@ -194,95 +194,9 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    // Tampilkan hasil region di elemen HTML
-    const regionResult = document.getElementById("regionResult");
-    regionResult.innerHTML = `
-      <h4>Region Info:</h4>
-      <ul>
-        <li><strong>District:</strong> ${
-          data.features[0]?.properties?.district || "Unknown"
-        }</li>
-        <li><strong>Province:</strong> ${
-          data.features[0]?.properties?.province || "Unknown"
-        }</li>
-        <li><strong>Sub-district:</strong> ${
-          data.features[0]?.properties?.sub_district || "Unknown"
-        }</li>
-        <li><strong>Village:</strong> ${
-          data.features[0]?.properties?.village || "Unknown"
-        }</li>
-      </ul>
-    `;
-
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Error fetching GeoJSON region:", error);
-    return null;
-  }
-}
-
-async function fetchRoads(longitude, latitude, maxDistance) {
-  try {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("login="))
-      ?.split("=")[1];
-
-    if (!token) {
-      Swal.fire({
-        title: "Authentication Error",
-        text: "You must be logged in to perform this action!",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-      }).then(() => {
-        window.location.href = "/login";
-      });
-      throw new Error("Token is missing in cookies!");
-    }
-
-    const response = await fetch(
-      "https://asia-southeast2-awangga.cloudfunctions.net/jualin/data/get/roads",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Login: token,
-        },
-        body: JSON.stringify({
-          long: longitude,
-          lat: latitude,
-          max_distance: maxDistance,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Tampilkan hasil jalan di elemen HTML
-    const roadsResult = document.getElementById("roadsResult");
-    roadsResult.innerHTML = `
-      <h4>Roads Info:</h4>
-      <ul>
-        ${data
-          .map(
-            (road) => `
-          <li><strong>Name:</strong> ${road.properties.name || "Unknown"} <br>
-          <strong>Type:</strong> ${road.properties.highway || "Unknown"}</li>
-        `
-          )
-          .join("")}
-      </ul>
-    `;
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching roads:", error);
     return null;
   }
 }
