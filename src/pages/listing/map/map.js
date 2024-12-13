@@ -66,6 +66,7 @@ const polygonLayer = new VectorLayer({
 });
 
 let clickedCoordinates = null;
+let isResultDisplayed = false;
 
 export async function displayMap() {
   const map = new Map({
@@ -75,45 +76,23 @@ export async function displayMap() {
   });
 
   map.on("singleclick", function (event) {
+    if (isResultDisplayed) {
+      // Jika hasil sudah ditampilkan, blokir aksi klik
+      Swal.fire({
+        title: "Action Blocked",
+        text: "Please reset the results to select a new location.",
+        icon: "warning",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
+    // Jika belum ada hasil, lanjutkan aksi klik
     clickedCoordinates = toLonLat(event.coordinate);
     console.log(
       `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
     );
-    addMarker(event.coordinate);
-
-    // Check if clicked on a road (line) or polygon
-    map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
-      if (layer === roadsLayer) {
-        // Handle click on roads
-        console.log("Road GeoJSON:", feature.getProperties());
-        Swal.fire({
-          title: "Road Info",
-          text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
-            feature.get("highway") || "Unknown"
-          }`,
-          icon: "info",
-        });
-      } else if (layer === polygonLayer) {
-        // Handle click on polygons
-        console.log("Polygon GeoJSON:", feature.getProperties());
-        Swal.fire({
-          title: "Polygon Info",
-          html: `<p><strong>District:</strong> ${
-            feature.get("district") || "Unknown"
-          }</p>
-                 <p><strong>Province:</strong> ${
-                   feature.get("province") || "Unknown"
-                 }</p>
-                 <p><strong>Sub-district:</strong> ${
-                   feature.get("sub_district") || "Unknown"
-                 }</p>
-                 <p><strong>Village:</strong> ${
-                   feature.get("village") || "Unknown"
-                 }</p>`,
-          icon: "info",
-        });
-      }
-    });
+    addMarker(event.coordinate); // Tambahkan marker pada lokasi yang diklik
   });
 
   document
@@ -126,7 +105,15 @@ export async function displayMap() {
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
           displayPolygonOnMap(geoJSON);
+          isResultDisplayed = true; // Set hasil sudah ditampilkan
         }
+      } else {
+        Swal.fire({
+          title: "No Location Selected",
+          text: "Please click on the map to select a region.",
+          icon: "info",
+          confirmButtonText: "OK",
+        });
       }
     });
 
@@ -136,7 +123,12 @@ export async function displayMap() {
       if (clickedCoordinates) {
         const maxDistance = document.getElementById("maxDistance").value;
         if (!maxDistance || isNaN(maxDistance)) {
-          alert("Please enter a valid max distance!");
+          Swal.fire({
+            title: "Invalid Input",
+            text: "Please enter a valid max distance!",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
           return;
         }
 
@@ -149,12 +141,36 @@ export async function displayMap() {
         if (response) {
           const geoJSON = convertToGeoJSON(response);
           displayRoads(geoJSON);
+          isResultDisplayed = true; // Set hasil sudah ditampilkan
         }
       } else {
-        alert("Please click on the map first!");
+        Swal.fire({
+          title: "No Location Selected",
+          text: "Please click on the map first!",
+          icon: "info",
+          confirmButtonText: "OK",
+        });
       }
     });
+
+  // Tombol Reset untuk memungkinkan klik ulang
+  document.getElementById("reset").addEventListener("click", () => {
+    clickedCoordinates = null;
+    isResultDisplayed = false; // Reset status hasil
+    markerSource.clear(); // Hapus marker
+    roadsSource.clear(); // Hapus jalan
+    polygonSource.clear(); // Hapus polygon
+    document.getElementById("regionResult").innerHTML = ""; // Kosongkan hasil region
+    document.getElementById("roadsResult").innerHTML = ""; // Kosongkan hasil roads
+    Swal.fire({
+      title: "Reset Complete",
+      text: "You can now select a new location on the map.",
+      icon: "success",
+      confirmButtonText: "OK",
+    });
+  });
 }
+
 
 async function fetchRegionGeoJSON(longitude, latitude) {
   try {
