@@ -443,6 +443,23 @@
   border: 1px solid #070f2b;
   color: #595959;
 }
+.listing-filter .filter-content-region .regult-section {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.listing-filter .filter-content-region .regult-section h4 {
+  margin-bottom: 5px;
+}
+.listing-filter .filter-content-region .regult-section ul {
+  list-style: none;
+  padding: 0;
+}
+.listing-filter .filter-content-region .regult-section li {
+  margin-bottom: 5px;
+}
 .listing-overview {
   padding: 0 3.4vw 2.4vw 1.7vw;
   position: relative;

@@ -47,31 +47,52 @@
       @include filter-options();
     }
 
-    &-max-distance{
+    &-max-distance {
       @include filter-options();
 
-      .input{
+      .input {
         border-radius: 1vh;
-        padding: .5vh;
+        padding: 0.5vh;
         border: 1px solid map-get($map: v.$color, $key: "dark-gray");
         background-color: transparent;
       }
 
-      #searchRoad{
+      #searchRoad {
         border-radius: 1vh;
-        padding: .5vh;
+        padding: 0.5vh;
         border: 1px solid map-get($map: v.$color, $key: "light-black");
         color: map-get($map: v.$color, $key: "dark-gray");
       }
     }
-    &-region{
+    &-region {
       @include filter-options();
 
-      #searchRegion{
+      #searchRegion {
         border-radius: 1vh;
-        padding: .5vh;
+        padding: 0.5vh;
         border: 1px solid map-get($map: v.$color, $key: "light-black");
         color: map-get($map: v.$color, $key: "dark-gray");
+      }
+
+      .regult-section {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+
+        h4 {
+          margin-bottom: 5px;
+        }
+
+        ul {
+          list-style: none;
+          padding: 0;
+        }
+
+        li {
+          margin-bottom: 5px;
+        }
       }
     }
   }
