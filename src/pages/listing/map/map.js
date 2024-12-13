@@ -91,6 +91,7 @@ export async function displayMap() {
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
           displayRegionResults(geoJSON);
+          displayPolygonOnMap(geoJSON); // Pastikan ditambahkan ke peta
         }
       }
     });
@@ -112,6 +113,7 @@ export async function displayMap() {
         );
         if (response) {
           displayRoadResults(response);
+          displayRoads(response); // Pastikan roads ditambahkan ke peta
         }
       }
     });
@@ -146,8 +148,14 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       ?.split("=")[1];
 
     if (!token) {
-      alert("You must be logged in to perform this action!");
-      window.location.href = "/login";
+      Swal.fire({
+        title: "Authentication Error",
+        text: "You must be logged in to perform this action!",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        window.location.href = "/login";
+      });
       return null;
     }
 
@@ -181,8 +189,14 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       ?.split("=")[1];
 
     if (!token) {
-      alert("You must be logged in to perform this action!");
-      window.location.href = "/login";
+      Swal.fire({
+        title: "Authentication Error",
+        text: "You must be logged in to perform this action!",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        window.location.href = "/login";
+      });
       return null;
     }
 
@@ -247,6 +261,27 @@ function displayRoadResults(data) {
         .join("")}
     </ul>
   `;
+}
+
+function displayPolygonOnMap(geoJSON) {
+  const features = new GeoJSON().readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
+
+  polygonSource.clear();
+  polygonSource.addFeatures(features);
+}
+
+function displayRoads(geoJSON) {
+  const format = new GeoJSON();
+  const features = format.readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
+
+  roadsSource.clear();
+  roadsSource.addFeatures(features);
 }
 
 function addMarker(coordinate) {
