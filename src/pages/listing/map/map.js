@@ -85,23 +85,57 @@ export async function displayMap() {
   });
 
   map.on("singleclick", function (event) {
-    if (isResultDisplayed) {
-      // Jika hasil sudah ditampilkan, blokir aksi klik
-      Swal.fire({
-        title: "Action Blocked",
-        text: "Please reset the results to select a new location.",
-        icon: "warning",
-        confirmButtonText: "OK",
-      });
+    // Periksa apakah klik dilakukan pada fitur di layer
+    let featureClicked = false;
+
+    map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
+      if (layer === roadsLayer || layer === polygonLayer) {
+        // Jika fitur di roadsLayer atau polygonLayer diklik, set flag
+        featureClicked = true;
+
+        // Tampilkan info tentang fitur yang diklik
+        if (layer === roadsLayer) {
+          console.log("Road GeoJSON:", feature.getProperties());
+          Swal.fire({
+            title: "Road Info",
+            text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
+              feature.get("highway") || "Unknown"
+            }`,
+            icon: "info",
+          });
+        } else if (layer === polygonLayer) {
+          console.log("Polygon GeoJSON:", feature.getProperties());
+          Swal.fire({
+            title: "Polygon Info",
+            html: `<p><strong>District:</strong> ${
+              feature.get("district") || "Unknown"
+            }</p>
+                   <p><strong>Province:</strong> ${
+                     feature.get("province") || "Unknown"
+                   }</p>
+                   <p><strong>Sub-district:</strong> ${
+                     feature.get("sub_district") || "Unknown"
+                   }</p>
+                   <p><strong>Village:</strong> ${
+                     feature.get("village") || "Unknown"
+                   }</p>`,
+            icon: "info",
+          });
+        }
+      }
+    });
+
+    if (featureClicked) {
+      // Jika klik dilakukan pada fitur, jangan tambahkan koordinat baru
       return;
     }
 
-    // Jika belum ada hasil, lanjutkan aksi klik
+    // Jika klik bukan pada fitur, lanjutkan untuk menambahkan koordinat
     clickedCoordinates = toLonLat(event.coordinate);
     console.log(
       `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
     );
-    addMarker(event.coordinate); // Tambahkan marker pada lokasi yang diklik
+    addMarker(event.coordinate);
   });
 
   document
