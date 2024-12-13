@@ -43,7 +43,7 @@ const markerLayer = new VectorLayer({
         "data:image/svg+xml;charset=utf-8," +
         encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-          <path fill="red" d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          <path fill="red" d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5-1.12 2.5-2.5 2.5z"/>
         </svg>`),
       scale: 1,
       anchor: [0.5, 1],
@@ -87,10 +87,12 @@ export async function displayMap() {
     .addEventListener("click", async function () {
       if (clickedCoordinates) {
         const [longitude, latitude] = clickedCoordinates;
+        roadsSource.clear();
 
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
           displayRegionResults(geoJSON);
+          displayPolygonOnMap(geoJSON);
         }
       }
     });
@@ -105,6 +107,7 @@ export async function displayMap() {
           return;
         }
 
+        polygonSource.clear();
         const response = await fetchRoads(
           clickedCoordinates[0],
           clickedCoordinates[1],
@@ -112,7 +115,10 @@ export async function displayMap() {
         );
         if (response) {
           displayRoadResults(response);
+          displayRoads(convertToGeoJSON(response));
         }
+      } else {
+        alert("Please click on the map first!");
       }
     });
 
@@ -247,6 +253,38 @@ function displayRoadResults(data) {
         .join("")}
     </ul>
   `;
+}
+
+function convertToGeoJSON(response) {
+  return {
+    type: "FeatureCollection",
+    features: response.map((feature) => ({
+      type: "Feature",
+      geometry: feature.geometry,
+      properties: feature.properties,
+    })),
+  };
+}
+
+function displayPolygonOnMap(geoJSON) {
+  const features = new GeoJSON().readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
+
+  polygonSource.clear();
+  polygonSource.addFeatures(features);
+}
+
+function displayRoads(geoJSON) {
+  const format = new GeoJSON();
+  const features = format.readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
+
+  roadsSource.clear();
+  roadsSource.addFeatures(features);
 }
 
 function addMarker(coordinate) {
