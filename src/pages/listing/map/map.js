@@ -80,6 +80,40 @@ export async function displayMap() {
       `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
     );
     addMarker(event.coordinate);
+
+    // Check if clicked on a road (line) or polygon
+    map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
+      if (layer === roadsLayer) {
+        // Handle click on roads
+        console.log("Road GeoJSON:", feature.getProperties());
+        Swal.fire({
+          title: "Road Info",
+          text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
+            feature.get("highway") || "Unknown"
+          }`,
+          icon: "info",
+        });
+      } else if (layer === polygonLayer) {
+        // Handle click on polygons
+        console.log("Polygon GeoJSON:", feature.getProperties());
+        Swal.fire({
+          title: "Polygon Info",
+          html: `<p><strong>District:</strong> ${
+            feature.get("district") || "Unknown"
+          }</p>
+                 <p><strong>Province:</strong> ${
+                   feature.get("province") || "Unknown"
+                 }</p>
+                 <p><strong>Sub-district:</strong> ${
+                   feature.get("sub_district") || "Unknown"
+                 }</p>
+                 <p><strong>Village:</strong> ${
+                   feature.get("village") || "Unknown"
+                 }</p>`,
+          icon: "info",
+        });
+      }
+    });
   });
 
   document
