@@ -80,6 +80,40 @@ export async function displayMap() {
       `Clicked on: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`
     );
     addMarker(event.coordinate);
+
+    // Check if clicked on a road (line) or polygon
+    map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
+      if (layer === roadsLayer) {
+        // Handle click on roads
+        console.log("Road GeoJSON:", feature.getProperties());
+        Swal.fire({
+          title: "Road Info",
+          text: `Name: ${feature.get("name") || "Unknown"}\nType: ${
+            feature.get("highway") || "Unknown"
+          }`,
+          icon: "info",
+        });
+      } else if (layer === polygonLayer) {
+        // Handle click on polygons
+        console.log("Polygon GeoJSON:", feature.getProperties());
+        Swal.fire({
+          title: "Polygon Info",
+          html: `<p><strong>District:</strong> ${
+            feature.get("district") || "Unknown"
+          }</p>
+                 <p><strong>Province:</strong> ${
+                   feature.get("province") || "Unknown"
+                 }</p>
+                 <p><strong>Sub-district:</strong> ${
+                   feature.get("sub_district") || "Unknown"
+                 }</p>
+                 <p><strong>Village:</strong> ${
+                   feature.get("village") || "Unknown"
+                 }</p>`,
+          icon: "info",
+        });
+      }
+    });
   });
 
   document
@@ -87,12 +121,11 @@ export async function displayMap() {
     .addEventListener("click", async function () {
       if (clickedCoordinates) {
         const [longitude, latitude] = clickedCoordinates;
+        roadsSource.clear();
 
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
-          displayRegionResults(geoJSON);
-          displayPolygonOnMap(geoJSON); // Tampilkan polygon di peta
-          addRegionMarker(geoJSON); // Tambahkan marker
+          displayPolygonOnMap(geoJSON);
         }
       }
     });
@@ -107,15 +140,18 @@ export async function displayMap() {
           return;
         }
 
+        polygonSource.clear();
         const response = await fetchRoads(
           clickedCoordinates[0],
           clickedCoordinates[1],
           Number(maxDistance)
         );
         if (response) {
-          displayRoadResults(response);
-          displayRoads(response); // Tampilkan roads di peta
+          const geoJSON = convertToGeoJSON(response);
+          displayRoads(geoJSON);
         }
+      } else {
+        alert("Please click on the map first!");
       }
     });
 }
@@ -136,7 +172,7 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       }).then(() => {
         window.location.href = "/login";
       });
-      return null;
+      throw new Error("Token is missing in cookies!");
     }
 
     const response = await fetch(
@@ -154,9 +190,13 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       }
     );
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
     return await response.json();
   } catch (error) {
-    console.error("Error fetching region data:", error);
+    console.error("Error fetching GeoJSON region:", error);
     return null;
   }
 }
@@ -177,7 +217,7 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       }).then(() => {
         window.location.href = "/login";
       });
-      return null;
+      throw new Error("Token is missing in cookies!");
     }
 
     const response = await fetch(
@@ -196,51 +236,26 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       }
     );
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
     return await response.json();
   } catch (error) {
-    console.error("Error fetching roads data:", error);
+    console.error("Error fetching roads:", error);
     return null;
   }
 }
 
-function displayRegionResults(geoJSON) {
-  const layout = document.querySelector(".listing-overview-layout");
-  layout.innerHTML = `
-    <div class="result-item">
-      <h4>Region Info:</h4>
-      <p><strong>District:</strong> ${
-        geoJSON.features[0]?.properties?.district || "Unknown"
-      }</p>
-      <p><strong>Province:</strong> ${
-        geoJSON.features[0]?.properties?.province || "Unknown"
-      }</p>
-      <p><strong>Sub-district:</strong> ${
-        geoJSON.features[0]?.properties?.sub_district || "Unknown"
-      }</p>
-      <p><strong>Village:</strong> ${
-        geoJSON.features[0]?.properties?.village || "Unknown"
-      }</p>
-    </div>
-  `;
-}
-
-function displayRoadResults(data) {
-  const layout = document.querySelector(".listing-overview-layout");
-  layout.innerHTML = `
-    <h4>Roads Info:</h4>
-    <ul>
-      ${data
-        .map(
-          (road) => `
-        <li>
-          <strong>Name:</strong> ${road.properties.name || "Unknown"}<br>
-          <strong>Type:</strong> ${road.properties.highway || "Unknown"}
-        </li>
-      `
-        )
-        .join("")}
-    </ul>
-  `;
+function convertToGeoJSON(response) {
+  return {
+    type: "FeatureCollection",
+    features: response.map((feature) => ({
+      type: "Feature",
+      geometry: feature.geometry,
+      properties: feature.properties,
+    })),
+  };
 }
 
 function displayPolygonOnMap(geoJSON) {
@@ -271,12 +286,4 @@ function addMarker(coordinate) {
 
   markerSource.clear();
   markerSource.addFeature(marker);
-}
-
-function addRegionMarker(geoJSON) {
-  const coordinates = geoJSON.features[0]?.geometry?.coordinates[0][0];
-  if (coordinates) {
-    const [lon, lat] = coordinates;
-    addMarker(fromLonLat([lon, lat]));
-  }
 }
