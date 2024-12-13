@@ -41,19 +41,10 @@ const markerLayer = new VectorLayer({
     image: new Icon({
       src:
         "data:image/svg+xml;charset=utf-8," +
-        encodeURIComponent(
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="red"
-              d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-            />
-          </svg>
-        ),
+        encodeURIComponent(`  
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+          <path fill="red" d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>`),
       scale: 1,
       anchor: [0.5, 1],
     }),
@@ -75,7 +66,6 @@ const polygonLayer = new VectorLayer({
 });
 
 let clickedCoordinates = null;
-let isResultDisplayed = false;
 
 export async function displayMap() {
   const map = new Map({
@@ -90,11 +80,11 @@ export async function displayMap() {
 
     map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
       if (layer === roadsLayer || layer === polygonLayer) {
-        // Jika fitur di roadsLayer atau polygonLayer diklik, set flag
+        // Jika fitur di roadsLayer atau polygonLayer diklik
         featureClicked = true;
 
-        // Tampilkan info tentang fitur yang diklik
         if (layer === roadsLayer) {
+          // Tampilkan informasi jalan
           console.log("Road GeoJSON:", feature.getProperties());
           Swal.fire({
             title: "Road Info",
@@ -104,6 +94,7 @@ export async function displayMap() {
             icon: "info",
           });
         } else if (layer === polygonLayer) {
+          // Tampilkan informasi polygon
           console.log("Polygon GeoJSON:", feature.getProperties());
           Swal.fire({
             title: "Polygon Info",
@@ -126,7 +117,7 @@ export async function displayMap() {
     });
 
     if (featureClicked) {
-      // Jika klik dilakukan pada fitur, jangan tambahkan koordinat baru
+      // Jika klik dilakukan pada fitur, blokir penambahan koordinat baru
       return;
     }
 
@@ -148,15 +139,7 @@ export async function displayMap() {
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
           displayPolygonOnMap(geoJSON);
-          isResultDisplayed = true; // Set hasil sudah ditampilkan
         }
-      } else {
-        Swal.fire({
-          title: "No Location Selected",
-          text: "Please click on the map to select a region.",
-          icon: "info",
-          confirmButtonText: "OK",
-        });
       }
     });
 
@@ -184,7 +167,6 @@ export async function displayMap() {
         if (response) {
           const geoJSON = convertToGeoJSON(response);
           displayRoads(geoJSON);
-          isResultDisplayed = true; // Set hasil sudah ditampilkan
         }
       } else {
         Swal.fire({
@@ -195,23 +177,6 @@ export async function displayMap() {
         });
       }
     });
-
-  // Tombol Reset untuk memungkinkan klik ulang
-  document.getElementById("reset").addEventListener("click", () => {
-    clickedCoordinates = null;
-    isResultDisplayed = false; // Reset status hasil
-    markerSource.clear(); // Hapus marker
-    roadsSource.clear(); // Hapus jalan
-    polygonSource.clear(); // Hapus polygon
-    document.getElementById("regionResult").innerHTML = ""; // Kosongkan hasil region
-    document.getElementById("roadsResult").innerHTML = ""; // Kosongkan hasil roads
-    Swal.fire({
-      title: "Reset Complete",
-      text: "You can now select a new location on the map.",
-      icon: "success",
-      confirmButtonText: "OK",
-    });
-  });
 }
 
 async function fetchRegionGeoJSON(longitude, latitude) {
