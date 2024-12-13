@@ -9,7 +9,6 @@ import { Style, Stroke, Icon, Fill } from "https://cdn.skypack.dev/ol/style.js";
 import Point from "https://cdn.skypack.dev/ol/geom/Point.js";
 import Feature from "https://cdn.skypack.dev/ol/Feature.js";
 import GeoJSON from "https://cdn.skypack.dev/ol/format/GeoJSON.js";
-import Swal from "https://cdn.jsdelivr.net/npm/sweetalert2@11";
 
 const attributions =
   '<a href="https://petapedia.github.io/" target="_blank">&copy; PetaPedia Indonesia</a>';
@@ -85,6 +84,7 @@ export async function displayMap() {
     // Check if clicked on a road (line) or polygon
     map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
       if (layer === roadsLayer) {
+        // Handle click on roads
         console.log("Road GeoJSON:", feature.getProperties());
         Swal.fire({
           title: "Road Info",
@@ -94,6 +94,7 @@ export async function displayMap() {
           icon: "info",
         });
       } else if (layer === polygonLayer) {
+        // Handle click on polygons
         console.log("Polygon GeoJSON:", feature.getProperties());
         Swal.fire({
           title: "Polygon Info",
@@ -120,9 +121,11 @@ export async function displayMap() {
     .addEventListener("click", async function () {
       if (clickedCoordinates) {
         const [longitude, latitude] = clickedCoordinates;
+        roadsSource.clear();
+
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
-          displayRegionResults(geoJSON);
+          displayPolygonOnMap(geoJSON);
         }
       }
     });
@@ -133,29 +136,22 @@ export async function displayMap() {
       if (clickedCoordinates) {
         const maxDistance = document.getElementById("maxDistance").value;
         if (!maxDistance || isNaN(maxDistance)) {
-          Swal.fire({
-            title: "Invalid Input",
-            text: "Please enter a valid max distance!",
-            icon: "error",
-          });
+          alert("Please enter a valid max distance!");
           return;
         }
 
+        polygonSource.clear();
         const response = await fetchRoads(
           clickedCoordinates[0],
           clickedCoordinates[1],
           Number(maxDistance)
         );
-
         if (response) {
-          displayRoadResults(response);
+          const geoJSON = convertToGeoJSON(response);
+          displayRoads(geoJSON);
         }
       } else {
-        Swal.fire({
-          title: "No Location Selected",
-          text: "Please click on the map first!",
-          icon: "info",
-        });
+        alert("Please click on the map first!");
       }
     });
 }
@@ -176,7 +172,7 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       }).then(() => {
         window.location.href = "/login";
       });
-      return null;
+      throw new Error("Token is missing in cookies!");
     }
 
     const response = await fetch(
@@ -194,9 +190,13 @@ async function fetchRegionGeoJSON(longitude, latitude) {
       }
     );
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
     return await response.json();
   } catch (error) {
-    console.error("Error fetching region data:", error);
+    console.error("Error fetching GeoJSON region:", error);
     return null;
   }
 }
@@ -217,7 +217,7 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       }).then(() => {
         window.location.href = "/login";
       });
-      return null;
+      throw new Error("Token is missing in cookies!");
     }
 
     const response = await fetch(
@@ -240,69 +240,43 @@ async function fetchRoads(longitude, latitude, maxDistance) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    // Tampilkan hasil jalan di bagian HTML
-    displayRoadResults(data);
-
-    return data;
+    return await response.json();
   } catch (error) {
-    console.error("Error fetching roads data:", error);
+    console.error("Error fetching roads:", error);
     return null;
   }
 }
 
-function displayRegionResults(geoJSON) {
-  const layout = document.querySelector(".listing-overview-layout");
-  layout.innerHTML = `
-    <div class="result-item">
-      <h4>Region Info:</h4>
-      <p><strong>District:</strong> ${
-        geoJSON.features[0]?.properties?.district || "Unknown"
-      }</p>
-      <p><strong>Province:</strong> ${
-        geoJSON.features[0]?.properties?.province || "Unknown"
-      }</p>
-      <p><strong>Sub-district:</strong> ${
-        geoJSON.features[0]?.properties?.sub_district || "Unknown"
-      }</p>
-      <p><strong>Village:</strong> ${
-        geoJSON.features[0]?.properties?.village || "Unknown"
-      }</p>
-    </div>
-  `;
+function convertToGeoJSON(response) {
+  return {
+    type: "FeatureCollection",
+    features: response.map((feature) => ({
+      type: "Feature",
+      geometry: feature.geometry,
+      properties: feature.properties,
+    })),
+  };
 }
 
-function displayRoadResults(data) {
-  const resultContainer = document.getElementById("resultContainer");
-  const resultCount = document.getElementById("resultCount");
+function displayPolygonOnMap(geoJSON) {
+  const features = new GeoJSON().readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
 
-  if (data.length === 0) {
-    resultContainer.innerHTML =
-      "<p>No roads found within the specified distance.</p>";
-    resultCount.innerText = "0 results";
-    return;
-  }
+  polygonSource.clear();
+  polygonSource.addFeatures(features);
+}
 
-  // Perbarui jumlah hasil
-  resultCount.innerText = `${data.length} results`;
+function displayRoads(geoJSON) {
+  const format = new GeoJSON();
+  const features = format.readFeatures(geoJSON, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
 
-  // Render hasil ke dalam container
-  resultContainer.innerHTML = `
-    <h4>Roads Info:</h4>
-    <ul class="result-list">
-      ${data
-        .map(
-          (road) => `
-        <li class="result-item">
-          <p><strong>Name:</strong> ${road.properties.name || "Unknown"}</p>
-          <p><strong>Type:</strong> ${road.properties.highway || "Unknown"}</p>
-        </li>
-      `
-        )
-        .join("")}
-    </ul>
-  `;
+  roadsSource.clear();
+  roadsSource.addFeatures(features);
 }
 
 function addMarker(coordinate) {
