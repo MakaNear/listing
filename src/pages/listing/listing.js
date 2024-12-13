@@ -5,7 +5,6 @@ import { url } from "../../helpers/urlConfig.js";
 import { displayMap } from "./map/map.js";
 import { toogleLayout, overviewLayout } from "./overview/overview.js";
 import { fetchOverview } from "./overview/fetchOverview.js";
-import { fetchPolygonInfo } from "./overview/fetchPolygon.js";
 
 export async function main() {
   const promises = [
@@ -30,7 +29,6 @@ export async function main() {
       toogleLayout();
       overviewLayout();
       fetchOverview();
-      fetchPolygonInfo();
     })
     .catch((error) => {
       console.error("Error loading components:", error);

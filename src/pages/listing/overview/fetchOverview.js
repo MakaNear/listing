@@ -41,7 +41,7 @@ export async function fetchOverview() {
 
     const layoutType = activeLayout.textContent.trim();
     console.log("Layout type:", layoutType);
-
+    
     if (layoutType === "format_list_bulleted") {
       result.forEach((data) => {
         const itemHTML = `
@@ -59,7 +59,7 @@ export async function fetchOverview() {
                 <div class="opening">
                   ${data.opening_hours?.opening ?? "N/A"} - ${
           data.opening_hours?.close ?? "N/A"
-        }
+          }
                 </div>
                 <div class="container">
                   <div class="rating">⭐ <span class="number">${
@@ -99,11 +99,6 @@ export async function fetchOverview() {
         overviewWrapperActive.insertAdjacentHTML("beforeend", itemHTML);
       });
     }
-
-    // Tambahkan Polygon Info di bawah daftar
-    const longitude = 107.57634352477324; // Contoh koordinat
-    const latitude = -6.87436891415509;
-    fetchPolygonInfo(longitude, latitude);
   } catch (error) {
     console.error("Error fetching data:", error);
   }
