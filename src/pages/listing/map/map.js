@@ -91,7 +91,8 @@ export async function displayMap() {
         const geoJSON = await fetchRegionGeoJSON(longitude, latitude);
         if (geoJSON) {
           displayRegionResults(geoJSON);
-          displayPolygonOnMap(geoJSON); // Pastikan ditambahkan ke peta
+          displayPolygonOnMap(geoJSON); // Tampilkan polygon di peta
+          addRegionMarker(geoJSON); // Tambahkan marker
         }
       }
     });
@@ -113,31 +114,10 @@ export async function displayMap() {
         );
         if (response) {
           displayRoadResults(response);
-          displayRoads(response); // Pastikan roads ditambahkan ke peta
+          displayRoads(response); // Tampilkan roads di peta
         }
       }
     });
-
-  document.querySelectorAll(".layout span").forEach((layoutBtn) => {
-    layoutBtn.addEventListener("click", function () {
-      document
-        .querySelectorAll(".layout span")
-        .forEach((btn) => btn.classList.remove("active"));
-      this.classList.add("active");
-
-      if (this.classList.contains("grid_view")) {
-        document.querySelector(".listing-overview-layout").style.display =
-          "grid";
-        document.querySelector(".listing-overview-layout-active").style.display =
-          "none";
-      } else {
-        document.querySelector(".listing-overview-layout").style.display =
-          "none";
-        document.querySelector(".listing-overview-layout-active").style.display =
-          "block";
-      }
-    });
-  });
 }
 
 async function fetchRegionGeoJSON(longitude, latitude) {
@@ -291,4 +271,12 @@ function addMarker(coordinate) {
 
   markerSource.clear();
   markerSource.addFeature(marker);
+}
+
+function addRegionMarker(geoJSON) {
+  const coordinates = geoJSON.features[0]?.geometry?.coordinates[0][0];
+  if (coordinates) {
+    const [lon, lat] = coordinates;
+    addMarker(fromLonLat([lon, lat]));
+  }
 }
