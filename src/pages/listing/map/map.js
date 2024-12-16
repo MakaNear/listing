@@ -95,6 +95,7 @@ export async function displayMap() {
           // SweetAlert tetap ditampilkan
           Swal.fire({
             title: "Road Info",
+            icon: "info",
             html: `
               <p><strong>Name:</strong> ${feature.get("name") || "Unknown"}</p>
               <p><strong>Type:</strong> ${feature.get("highway") || "Unknown"}</p>
