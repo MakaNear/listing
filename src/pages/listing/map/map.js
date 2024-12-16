@@ -119,6 +119,7 @@ export async function displayMap() {
           // SweetAlert tetap ditampilkan
           Swal.fire({
             title: "Polygon Info",
+            icon: "info",
             html: `
               <p><strong>District:</strong> ${feature.get("district") || "Unknown"}</p>
               <p><strong>Province:</strong> ${feature.get("province") || "Unknown"}</p>
